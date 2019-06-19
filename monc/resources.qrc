@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/Images">
+        <file>./Resources/Images/rfid-logo.png</file>
+        <file>./Resources/Images/takemoney.png</file>
+	<file>./Resources/Images/pinbon.png</file>
+	<file>./Resources/Images/moneythief.png</file>
+	<file>./Resources/Images/gimmeyourmoney.png</file>
+	<file>./Resources/Images/saatbank-logo.jpg</file>
+    </qresource>
+</RCC>
