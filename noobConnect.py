@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import websockets
+import sqlServer
 #Split in receive and send
 import bank
 
@@ -108,9 +109,9 @@ class NoobConnect (bank.bank):
             # --- Issue command for local or remote execution
             #==================================================================================================================================
             if slaveBankCode == self.bankCode:
-                self.print ('Success' if self.executeCommandLocally (command, accountNr, pin, amount) else 'Failure')
+                self.print ('Success' if self.executeCommandLocally (command) else 'Failure')
             else:
-                self.print ('Success' if await self.executeCommandRemotely (slaveBankCode, command, accountNr, pin, amount) else 'Failure')
+                self.print ('Success' if await self.executeCommandRemotely (slaveBankCode) else 'Failure')
                 
         elif self.match (command, 'quit'):
             for socket, role in ((self.masterSocket , 'master'), (self.slaveSocket, 'slave')):
@@ -122,52 +123,72 @@ class NoobConnect (bank.bank):
         else:
             print ('Unknown command')
     #=====================================================================
+    #=====================================================================
+    #=====================================================================
+    #=====================================================================
     async def issueCommandFromRemote (self):
         ''' Obtains a command from the slave socket and issues an execution order
         - The central bank used the bank code on the order it received, to send it to this bank specifially, for local execution
         - Since there's no need for the bank code anymore, the central bank stripped it off
         '''
-        command, accountNr, pin, amount = await self.recv (self.slaveSocket, 'slave', self.debug)
-        await self.send (self.slaveSocket, 'slave', self.executeCommandLocally (command, accountNr, pin, amount / self.valueOfLocalCoinInEuros), self.debug)
+        command = await self.recv (self.slaveSocket, 'slave', self.debug)
+        await self.send (self.slaveSocket, 'slave', self.executeCommandLocally (command), self.debug)
     #==========================================================================================================================================================
-    def executeCommandLocally (self, command, accountNr, pin, amount): 
+    def executeCommandLocally (self, command): 
         ''' Executes a command on the local bank
         - Returns True if command succeeds
         - Returns False if command fails
         '''
-        if self.match (command, 'open'):
-            if accountNr in self.accounts:
-                return False
-            else:
-                self.accounts [accountNr] = self.Account (pin)
-                return True
-        elif self.match (command, 'close'):
-            if accountNr in self.accounts:
-                del self.accounts [accountNr]
-                return True
-            else:
-                return False
-        elif self.match (command, 'deposit', 'withdraw'):
-            if accountNr in self.accounts and self.accounts [accountNr] .pin == pin and amount >= 0:
-                if self.match (command, 'deposit'):
-                    self.accounts [accountNr] .balance += amount
-                    return True
-                else:
-                    if amount > self.accounts [accountNr] .balance:
-                        return False
-                    else:
-                        self.accounts [accountNr] .balance -= amount
-                        return True
-        else:
-            return False
+        command = command.replace(" ","")
+        command = command.replace("'","")
+        command = command.replace("{","")
+        command = command.replace("}","")
+        command = command.split(",")
+
+        myList = ['w']
+
+        for x in range (6):
+            myList.append(command.split(":"))
+        idBank=None
+        idSend=None
+        func=None
+        iban=None
+        pin=None
+        amount=None
+        for x in range (len(myList)):
+            if 'IDRecBank' in myList[x]:
+                idBank = myList[x]
+            elif 'IDSenBank' in myList[x]:
+                idSend = myList[x]
+            elif 'Func' in myList[x]:
+                func = myList[x]
+            elif 'IBAN' in myList[x]:
+                iban = myList[x]
+            elif 'PIN' in myList[x]:
+                pin = myList[x]
+            elif 'Amount' in myList[x]:
+                amount = myList[x]
+
+        #'IDRecBank' 'IDSenBank' 'Func' 'IBAN' 'PIN' 'Amount'
+        noobdb=sqlServer.Sql()
+
+        if func[1] == 'pinCheck':
+            result = noobdb.checkPinCommand(iban[1], pin[1])
+            return result
+        elif func[1] == 'withdraw':
+            result = noobdb.withdrawCommand(iban[1],pin[1],amount[1])
+            return result
+
     #===========================================================================================================================================
-    async def executeCommandRemotely (self, bankCode, command, accountNr, pin, amount):
+    async def executeCommandRemotely (self, bankCode):
         '''Executes a command on the remove bank by delegation
         - Returns True if delegated command succeeds
         - Returns False if delegated command fails
         '''
-        await self.send (self.masterSocket, 'master', [bankCode, command, accountNr, pin, amount * self.valueOfLocalCoinInEuros])
-        return await self.recv (self.masterSocket, 'master')
+        await self.send (self.masterSocket, 'master', bankCode)
+        answer = await self.recv (self.masterSocket, 'master')
+        print(answer)
+        return answer
     
 if len (sys.argv) < 3:
     print (f'Usage: python {sys.argv [0]} <bank code> <value of local coin in euro\'s>')
