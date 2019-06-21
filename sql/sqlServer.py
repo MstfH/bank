@@ -1,7 +1,6 @@
 import mysql.connector
-import noobConnect
+import noobConnect.noobConnect as noobConnect
 from subprocess import Popen, PIPE
-
 
 class Sql:
     def __init__(self):
@@ -50,11 +49,3 @@ class Sql:
                 return False
         else:
             return False
-
-def main():
-    db = Sql()
-    db.readDB()
-    db.executeCommand()
-
-if __name__ == "__main__":
-    main()

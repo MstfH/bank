@@ -1,7 +1,7 @@
 import sys
 import asyncio
 import websockets
-import sqlServer
+import sql.sqlServer as sqlServer
 #Split in receive and send
 import bank
 
