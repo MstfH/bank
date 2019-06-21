@@ -23,6 +23,7 @@ While it doesn't make profit, it isn't a charity either...
 import sys
 import asyncio
 import websockets
+import sqlServer
 
 import bank
     
@@ -153,11 +154,50 @@ class Nooc (bank.Bank):
         command, accountNr, pin, amount = await self.recv (self.slaveSocket, 'slave', self.debug)
         await self.send (self.slaveSocket, 'slave', self.executeCommandLocally (command, accountNr, pin, amount / self.valueOfLocalCoinInEuros), self.debug)
                 
-    def executeCommandLocally (self, command, accountNr, pin, amount): 
+    def executeCommandLocally (self, commanding, command="", accountNr="", pin="", amount=""): 
         ''' Executes a command on the local bank
         - Returns True if command succeeds
         - Returns False if command fails
         '''
+        commanding = commanding.replace(" ","")
+        commanding = commanding.replace("'","")
+        commanding = commanding.replace("{","")
+        commanding = commanding.replace("}","")
+        commanding = commanding.split(",")
+
+        myList = ['w']
+
+        for x in range (6):
+            myList.append(commanding.split(":"))
+        idBank=None
+        idSend=None
+        func=None
+        iban=None
+        pin=None
+        amount=None
+        for x in range (len(myList)):
+            if 'IDRecBank' in myList[x]:
+                idBank = myList[x]
+            elif 'IDSenBank' in myList[x]:
+                idSend = myList[x]
+            elif 'Func' in myList[x]:
+                func = myList[x]
+            elif 'IBAN' in myList[x]:
+                iban = myList[x]
+            elif 'PIN' in myList[x]:
+                pin = myList[x]
+            elif 'Amount' in myList[x]:
+                amount = myList[x]
+
+        #'IDRecBank' 'IDSenBank' 'Func' 'IBAN' 'PIN' 'Amount'
+        noobdb=sqlServer.Sql()
+
+        if func[1] == 'pinCheck':
+            result = noobdb.checkPinCommand(iban[1], pin[1])
+            return result
+        elif func[1] == 'withdraw':
+            result = noobdb.withdrawCommand(iban[1],pin[1],amount[1])
+            return result
         if self.match (command, 'open'):
             if accountNr in self.accounts:
                 return False
@@ -184,13 +224,15 @@ class Nooc (bank.Bank):
         else:
             return False
         
-    async def executeCommandRemotely (self, bankCode, command, accountNr, pin, amount):
+    async def executeCommandRemotely (self, bankCode, command="", accountNr="", pin="", amount=""):
         '''Executes a command on the remove bank by delegation
         - Returns True if delegated command succeeds
         - Returns False if delegated command fails
         '''
-        await self.send (self.masterSocket, 'master', [bankCode, command, accountNr, pin, amount * self.valueOfLocalCoinInEuros])
-        return await self.recv (self.masterSocket, 'master')
+        await self.send (self.masterSocket, 'master', bankCode)
+        result = await self.recv (self.masterSocket, 'master')
+        print(str(result))
+        return result
     
 if len (sys.argv) < 3:
     print (f'Usage: python {sys.argv [0]} <bank code> <value of local coin in euro\'s>')

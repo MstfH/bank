@@ -1,11 +1,11 @@
 import mysql.connector
-import noobConnect
+#import noobConnect
 from subprocess import Popen, PIPE
 
 class Sql:
     def __init__(self):
         self.mydb = mysql.connector.connect(
-            host = "localhost",
+            host = "monarchdouglasbank.tk",
             user = "root",
             passwd = "wK6227",
             database = "bank"
@@ -19,8 +19,8 @@ class Sql:
         self.mycursor.fetchall()
         self.command = self.oneRow[1]
     
-    def executeCommand(self):
-        noobConnect.NoobConnect.executeCommandRemotely(self.command)
+    # def executeCommand(self):
+    #     noobConnect.NoobConnect.executeCommandRemotely(self.command)
     
     def checkPinCommand(self, iban="", pin=""):
         query = "SELECT * FROM accounts WHERE iban = {};".format(iban)
