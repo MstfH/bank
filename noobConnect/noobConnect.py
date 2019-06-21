@@ -1,11 +1,11 @@
 import sys
 import asyncio
 import websockets
-import sql.sqlServer as sqlServer
+import sqlServer
 #Split in receive and send
 import bank
 
-class NoobConnect (bank.bank):
+class NoobConnect (bank):
     version = '1.0.0'
     debug = False
 

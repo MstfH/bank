@@ -1,5 +1,5 @@
 import mysql.connector
-import noobConnect.noobConnect as noobConnect
+import noobConnect
 from subprocess import Popen, PIPE
 
 class Sql:
