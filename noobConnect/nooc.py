@@ -159,10 +159,15 @@ class Nooc (bank.Bank):
         - Returns True if command succeeds
         - Returns False if command fails
         '''
-        commanding = commanding.replace(" ","")
-        commanding = commanding.replace("'","")
+        if " " in commanding:
+            commanding = commanding.replace(" ","")
+        if "'" in commanding:
+            commanding = commanding.replace("'","")
+        if '"' in commanding:
+            commanding = commanding.replace('"','')
         commanding = commanding.replace("{","")
         commanding = commanding.replace("}","")
+        commanding = commanding.replace("\\\\","")
         commanding = commanding.split(",")
 
         myList = ['w']
