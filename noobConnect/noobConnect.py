@@ -5,7 +5,7 @@ import sqlServer
 #Split in receive and send
 import bank
 
-class NoobConnect (bank):
+class NoobConnect (bank.bank):
     version = '1.0.0'
     debug = False
 
@@ -22,7 +22,7 @@ class NoobConnect (bank):
             self.balance = 0
     #===========================================================
     def __init__ (self, bankCode, valueOfLocalCoinInEuros = 1):
-        super () . __init__ (bankCode)
+        super () . __init__ (sumodo)
         
         self.print (f'Consumer bank emulator version {self.version} initiated')
         self.noobUrl = f'ws://{self.centralHostName}:{self.centralPortNr}'
